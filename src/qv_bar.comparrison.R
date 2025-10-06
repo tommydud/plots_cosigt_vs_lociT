@@ -1,5 +1,3 @@
-setwd("/group/soranzo/thomas.dudley/confronto/locityper_database")
-
 # Load libraries
 library(ggplot2)
 library(dplyr)
@@ -8,8 +6,8 @@ library(cowplot)
 library(grid)
 library(tidyr)  
 
-locityper_file <- fread("locityper.qv_bar.tsv")
-cosigt_file <- fread("cosigt.qv_bar.tsv")
+locityper_file <- fread("lociT_326.tpr.qv_bar.tsv")
+cosigt_file <- fread("cosigt_326.tpr.qv_bar.tsv")
 
 quality_levels <- c("very low: <= 17", "low: >17, <= 23", "mid: >23, <=33", "high: >33")
 
