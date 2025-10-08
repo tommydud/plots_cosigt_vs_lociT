@@ -1,2 +1,8 @@
 # plots_cosigt_vs_lociT
 Qv scripts and plots
+
+The main Rscript is src/qv_comparrison.R 
+
+In order to run the script correctly yuo must specify the to maun arguments: Rscript src/qv_comparrison.R ARG1 ARG2
+
+the plots will show the results startig from ARG1 performs better up untill ARG2 does better
