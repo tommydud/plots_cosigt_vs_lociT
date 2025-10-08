@@ -1,13 +1,17 @@
+setwd("/group/soranzo/thomas.dudley/cosigt_vs_locityper/plots_cosigt_vs_lociT")
+
 # Load libraries
 library(ggplot2)
 library(dplyr)
 library(data.table)
 library(cowplot)
 library(grid)
-library(tidyr)  
+library(tidyr)
 
-locityper_file <- fread("lociT_326.tpr.qv_bar.tsv")
-cosigt_file <- fread("cosigt_326.tpr.qv_bar.tsv")
+args <- commandArgs(trailingOnly = TRUE)
+
+locityper_file <- fread(args[1])
+cosigt_file <- fread(args[2])
 
 quality_levels <- c("very low: <= 17", "low: >17, <= 23", "mid: >23, <=33", "high: >33")
 
@@ -61,7 +65,7 @@ row_data_row <- qv_summary_sorted %>%
     type    = factor(type, levels = c(1,2), labels = c("LociT","cosigt"))
   )
 
-weights <- c(17,23,33,43)
+weights <- c(1,17,23,33)
 names(weights) <- c("very low: <= 17","low: >17, <= 23","mid: >23, <=33","high: >33")
 
 total_table <- row_data_row %>%
@@ -71,14 +75,47 @@ total_table <- row_data_row %>%
     weight=unname(weights[quality]),
     score = weight * percent) %>%
   group_by(region,type) %>%
-  summarise(total = sum(score), .groups = "drop")
+  summarise(total = sum(score)/100, .groups = "drop")
 
 difference_table <- total_table %>%
   arrange(region, desc(type)) %>%
   group_by(region) %>%
   summarise(difference = diff(total), .groups = "drop") %>%
   arrange(desc(difference)) %>%        # <<-- differenza dal maggiore al minore
-  mutate(ordering = row_number())
+  mutate(ordering = row_number()) %>%
+  filter(difference >= 1 | difference <= -1) %>%
+  mutate(
+    improvement=ifelse(difference >= 1, TRUE, FALSE)
+    )
+
+################################################################################
+
+# barplot for cleare difference in performance
+
+qv_bars <- ggplot(difference_table, aes(x = reorder(region, -difference), y = difference, fill=improvement)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("TRUE" = "#2a9d8f", "FALSE" = "#e76f51")) +
+  labs(
+    title = "Average QV ordered by difference in performance locit-cosigt",
+    x = "Region",
+    y = "QV difference"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  scale_y_continuous(breaks = seq(floor(min(difference_table$difference)),
+                                  ceiling(max(difference_table$difference)),
+                                  by = 1))
+
+ggsave(filename = "qv_improvement.png", 
+       plot= qv_bars, 
+       width = 50, 
+       height = 10, 
+       dpi = 300, 
+       limitsize=FALSE)
+
+cat("Saved plot: qv_improvement.png \n")
+
+################################################################################
 
 #row_data_row <- row_data_row %>%
 #left_join(difference_table %>% select(region, ordering), by="region")
@@ -169,21 +206,17 @@ for (i in 1:num_rows_qv) {
   
 }
 
-# Dimensioni immagine
+# Immage dimensions
 qv_plot_width <- max(15, qv_bars_per_row * 1.0)
 qv_plot_height <- 5 * num_rows_qv
 
-# Combina i plot (4 righe al max)
+# Combine the plots
 qv_combined_plot <- plot_grid(plotlist = qv_bar_plots, ncol = 1, align = 'v', axis = 'lr')
 
-
-# Salva PNG
 ggsave(filename = "qv_bar.png",
        plot = qv_combined_plot,
        width = qv_plot_width,
        height = qv_plot_height,
        limitsize = FALSE)
 
-
-
-
+cat("Saved file qv_bar.png \n")
