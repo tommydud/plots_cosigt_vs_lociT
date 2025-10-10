@@ -77,7 +77,14 @@ total_table <- row_data_row %>%
   group_by(region,type) %>%
   summarise(total = sum(score)/100, .groups = "drop")
 
-difference_table <- total_table %>%
+difference_table <- total_table %>% 
+  arrange(region, desc(type)) %>% 
+  group_by(region) %>% 
+  summarise(difference = diff(total), .groups = "drop") %>% 
+  arrange(desc(difference)) %>% # <<-- differenza dal maggiore al minore 
+  mutate(ordering = row_number())
+
+difference_table_1 <- total_table %>%
   arrange(region, desc(type)) %>%
   group_by(region) %>%
   summarise(difference = diff(total), .groups = "drop") %>%
@@ -92,7 +99,7 @@ difference_table <- total_table %>%
 
 # barplot for cleare difference in performance
 
-qv_bars <- ggplot(difference_table, aes(x = reorder(region, -difference), y = difference, fill=improvement)) +
+qv_bars <- ggplot(difference_table_1, aes(x = reorder(region, -difference), y = difference, fill=improvement)) +
   geom_col(show.legend = FALSE) +
   scale_fill_manual(values = c("TRUE" = "#2a9d8f", "FALSE" = "#e76f51")) +
   labs(
@@ -219,4 +226,4 @@ ggsave(filename = "qv_bar.png",
        height = qv_plot_height,
        limitsize = FALSE)
 
-cat("Saved file qv_bar.png \n")
+cat("Saved plot: qv_bar.png \n")
